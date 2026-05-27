@@ -1,21 +1,47 @@
 defmodule Newxp.PreProcessing do
-  @doc "Apply core HTML cleaning transformations."
-  def clean_html_content(html) do
-    {:ok, doc} = Floki.parse_document(html)
+  alias Newxp.HtmlUtils
 
-    doc
-    |> remove_figures()
-    |> remove_tables()
-    |> remove_noscript()
-    |> Floki.raw_html()
+  @doc "Get configured html2text options."
+  def get_html2text_handler do
+    [
+      link_footnotes: false,
+      empty_img_mode: :ignore,
+      width: :infinity
+    ]
   end
 
-  # Removes all <figure> elements from the parsed document.
-  defp remove_figures(doc), do: Floki.filter_out(doc, "figure")
+  @doc "Convert HTML to plain text for summarization."
+  def process_for_summary(html) do
+    HTML2Text.convert!(html, get_html2text_handler())
+  end
 
-  # Removes all <table> elements from the parsed document.
-  defp remove_tables(doc), do: Floki.filter_out(doc, "table")
+  @doc """
+  Process content for general applications.
 
-  # Removes all <noscript> elements from the parsed document.
-  defp remove_noscript(doc), do: Floki.filter_out(doc, "noscript")
+  This includes:
+  - Core HTML cleaning (figures, tables, read-more)
+  - Convert to plaintext (preserving most HTML structure)
+  """
+  def process_for_general(html) do
+    {:ok, doc} =
+      html
+      |> HtmlUtils.clean_html_content()
+      |> Floki.parse_document()
+
+    cleaned =
+      doc
+      |> remove_read_more()
+      |> Floki.raw_html()
+
+    HTML2Text.convert!(cleaned, width: :infinity)
+  end
+
+  # Removes read-more elements (common class and link patterns).
+  defp remove_read_more(doc) do
+    doc
+    |> Floki.filter_out("[class*=read-more]")
+    |> Floki.filter_out("[class*=readmore]")
+  end
+
+
 end
