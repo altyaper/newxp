@@ -1,7 +1,25 @@
 defmodule Newxp.PreProcessing do
+  @moduledoc """
+  Functions for processing HTML content into plain text for different use cases.
+  """
+
   alias Newxp.HtmlUtils
 
-  @doc "Get configured html2text options."
+  @doc """
+  Get configured html2text options.
+
+  Returns a keyword list suitable for passing to `HTML2Text.convert/2`:
+
+  - `link_footnotes: false` — omits link footnotes
+  - `empty_img_mode: :ignore` — skips images without alt text
+  - `width: :infinity` — disables line wrapping
+
+  ## Examples
+
+      Newxp.PreProcessing.get_html2text_handler()
+      # => [link_footnotes: false, empty_img_mode: :ignore, width: :infinity]
+
+  """
   def get_html2text_handler do
     [
       link_footnotes: false,
@@ -10,7 +28,19 @@ defmodule Newxp.PreProcessing do
     ]
   end
 
-  @doc "Convert HTML to plain text for summarization."
+  @doc """
+  Convert HTML to plain text for summarization.
+
+  Strips links, images, and formatting. Output is unwrapped plain text
+  suitable for feeding into summarization models.
+
+  ## Examples
+
+      html = "<p>Hello <a href=\\"https://example.com\\">world</a></p>"
+      Newxp.PreProcessing.process_for_summary(html)
+      # => "Hello world\\n"
+
+  """
   def process_for_summary(html) do
     HTML2Text.convert!(html, get_html2text_handler())
   end
@@ -19,8 +49,15 @@ defmodule Newxp.PreProcessing do
   Process content for general applications.
 
   This includes:
-  - Core HTML cleaning (figures, tables, read-more)
+  - Core HTML cleaning (figures, tables, noscript, read-more)
   - Convert to plaintext (preserving most HTML structure)
+
+  ## Examples
+
+      html = "<p>Hello</p><figure><img/></figure>"
+      Newxp.PreProcessing.process_for_general(html)
+      # => "Hello\\n"
+
   """
   def process_for_general(html) do
     {:ok, doc} =
@@ -42,6 +79,4 @@ defmodule Newxp.PreProcessing do
     |> Floki.filter_out("[class*=read-more]")
     |> Floki.filter_out("[class*=readmore]")
   end
-
-
 end
