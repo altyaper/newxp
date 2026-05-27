@@ -22,6 +22,7 @@ defmodule Newxp.MixProject do
   defp deps do
     [
       {:floki, "~> 0.37"},
+      {:html2text, "~> 0.3.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
